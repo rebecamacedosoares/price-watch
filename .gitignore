@@ -1,0 +1,16 @@
+# Arquivos de ambiente
+.env
+
+# Cache do Python
+__pycache__/
+*.pyc
+
+# Pasta de arquivos estáticos do Django
+staticfiles/
+
+# Pasta de uploads do Django
+mediafiles/
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
