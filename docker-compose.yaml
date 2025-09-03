@@ -24,6 +24,16 @@ services:
       - POSTGRES_PASSWORD=postgres
   redis:
     image: "redis:alpine"
+  worker:
+    build: ./src
+    command: celery -A pricewatch worker -l info
+    volumes:
+      - ./src/:/usr/src/app/
+    env_file:
+      - ./src/.env
+    depends_on:
+      - db
+      - redis
 
 volumes:
   postgres_data:
