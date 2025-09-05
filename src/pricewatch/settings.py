@@ -145,8 +145,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
 
 CELERY_BEAT_SCHEDULE = {
-    'scrape-all-products-every-4-hours': {
+    'scrape-all-products-every-minute': {
         'task': 'products.tasks.scrape_all_products',
-        'schedule': 14400.0,  # 4 horas em segundos (4 * 60 * 60)
+        'schedule': 60.0,  # A cada 60 segundos
     },
 }
