@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'products',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -142,3 +143,10 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
+
+CELERY_BEAT_SCHEDULE = {
+    'scrape-all-products-every-4-hours': {
+        'task': 'products.tasks.scrape_all_products',
+        'schedule': 14400.0,  # 4 horas em segundos (4 * 60 * 60)
+    },
+}

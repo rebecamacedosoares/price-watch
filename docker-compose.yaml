@@ -34,6 +34,16 @@ services:
     depends_on:
       - db
       - redis
+  beat:
+    build: ./src
+    command: celery -A pricewatch beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./src/:/usr/src/app/
+    env_file:
+      - ./src/.env
+    depends_on:
+      - db
+      - redis
 
 volumes:
   postgres_data:
