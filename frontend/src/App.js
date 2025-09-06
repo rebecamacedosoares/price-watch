@@ -109,18 +109,22 @@ function App() {
           {loading ? <p>Carregando produtos...</p> : (
             <div className="product-list">
               {products.length > 0 ? (
-                products.map(product => (
-                  <div key={product.id} className="product-card">
-                    <button className="delete-btn" title="Remover produto" onClick={() => handleDelete(product.id)}>×</button>
-                    <h3>{product.name}</h3>
-                    <p><strong>Preço Alvo:</strong> R$ {product.target_price}</p>
-                    <p className={product.current_price ? 'price-ok' : 'price-pending'}>
-                      <strong>Preço Atual:</strong> {product.current_price ? `R$ ${product.current_price}` : 'Aguardando verificação...'}
-                    </p>
-                    <p className="last-checked">Última verificação: {formatDate(product.last_checked)}</p>
-                    <a href={product.url} target="_blank" rel="noopener noreferrer">Ver Produto</a>
-                  </div>
-                ))
+                products.map(product => {
+                    const isPriceGood = product.current_price && parseFloat(product.current_price) <= parseFloat(product.target_price);
+                    
+                    return (
+                        <div key={product.id} className={`product-card ${isPriceGood ? 'is-on-sale' : ''}`}>
+                            <button className="delete-btn" title="Remover produto" onClick={() => handleDelete(product.id)}>×</button>
+                            <h3>{product.name}</h3>
+                            <p><strong>Preço Alvo:</strong> R$ {product.target_price}</p>
+                            <p className={product.current_price ? 'price-ok' : 'price-pending'}>
+                                <strong>Preço Atual:</strong> {product.current_price ? `R$ ${product.current_price}` : 'Aguardando verificação...'}
+                            </p>
+                            <p className="last-checked">Última verificação: {formatDate(product.last_checked)}</p>
+                            <a href={product.url} target="_blank" rel="noopener noreferrer">Ver Produto</a>
+                        </div>
+                    );
+                })
               ) : <p>Nenhum produto cadastrado ainda.</p>}
             </div>
           )}
