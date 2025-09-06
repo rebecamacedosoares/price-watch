@@ -1,8 +1,8 @@
-# src/products/tasks.py
 from celery import shared_task
 import requests
 from bs4 import BeautifulSoup
 import re
+from django.utils import timezone
 
 from .models import Product, PriceHistory
 
@@ -10,10 +10,12 @@ from .models import Product, PriceHistory
 def update_product_price(product_id):
     try:
         product = Product.objects.get(id=product_id)
-        print(f"Iniciando scraping para: {product.name} (ID: {product.id})")
     except Product.DoesNotExist:
         print(f"Produto com ID {product_id} não encontrado.")
         return
+
+    product.last_checked = timezone.now()
+    print(f"Iniciando scraping para: {product.name} (ID: {product.id})")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -26,12 +28,16 @@ def update_product_price(product_id):
         soup = BeautifulSoup(page.content, "html.parser")
         price_float = None
 
-        # Lógica de seletores...
-        # ... (a lógica if/elif continua a mesma) ...
         if 'mercadolivre.com.br' in product.url:
-            # ... (código do Mercado Livre) ...
-            pass
-        elif 'amazon.com.br' in product.url:
+            price_container = soup.find(class_="ui-pdp-price__second-line")
+            if price_container:
+                price_element = price_container.find('span', class_="andes-money-amount__fraction")
+                if price_element:
+                    price_text = price_element.get_text().strip()
+                    price_clean = re.sub(r'[^\d,]', '', price_text).replace(',', '.')
+                    price_float = float(price_clean)
+        
+        elif 'amazon.com.br' in product.url or 'web:8000' in product.url: 
             price_whole_element = soup.find('span', class_='a-price-whole')
             price_fraction_element = soup.find('span', class_='a-price-fraction')
             if price_whole_element and price_fraction_element:
@@ -40,19 +46,25 @@ def update_product_price(product_id):
                 price_float = float(f"{price_whole}.{price_fraction}")
 
         if price_float is not None:
-            # ... (lógica de sucesso continua a mesma) ...
-            print(f"SUCESSO! Preço atualizado para R$ {price_float:.2f} para o produto ID {product.id}")
+            if product.current_price is None or product.current_price != price_float:
+                product.current_price = price_float
+                PriceHistory.objects.create(product=product, price=price_float)
+                print(f"SUCESSO! Preço atualizado para R$ {price_float:.2f} para o produto ID {product.id}")
+
+                if product.current_price <= product.target_price:
+                    print(f"ALERTA! Produto '{product.name}' (ID: {product.id}) atingiu o preço alvo!")
+
+            else:
+                print(f"INFO: Preço do produto ID {product.id} permaneceu o mesmo.")
         else:
             print(f"FALHA: Seletor de preço não encontrado para o produto ID {product.id}")
-            # --- ADIÇÃO IMPORTANTE AQUI ---
-            # Salva o HTML recebido para que possamos depurar
-            with open(f"/usr/src/app/falha_scraping_produto_{product.id}.html", "w", encoding="utf-8") as f:
-                f.write(soup.prettify())
-            print(f"HTML da página de falha salvo em 'src/falha_scraping_produto_{product.id}.html'")
-
+        
+        product.save()
 
     except Exception as e:
         print(f"Erro inesperado ao raspar produto ID {product.id}: {e}")
+        product.save()
+
 
 @shared_task
 def scrape_all_products():
