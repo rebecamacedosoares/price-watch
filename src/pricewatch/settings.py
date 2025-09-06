@@ -40,9 +40,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'products',
     'django_celery_beat',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -150,3 +152,8 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 60.0,  # A cada 60 segundos
     },
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
