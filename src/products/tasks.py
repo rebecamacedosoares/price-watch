@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from django.utils import timezone
+from django.core.mail import send_mail
 
 from .models import Product, PriceHistory
 
@@ -28,7 +29,7 @@ def update_product_price(product_id):
         soup = BeautifulSoup(page.content, "html.parser")
         price_float = None
 
-        if 'mercadolivre.com.br' in product.url:
+        if 'mercadolivre.com.br' in product.url or 'web:8000' in product.url:
             price_container = soup.find(class_="ui-pdp-price__second-line")
             if price_container:
                 price_element = price_container.find('span', class_="andes-money-amount__fraction")
@@ -37,7 +38,7 @@ def update_product_price(product_id):
                     price_clean = re.sub(r'[^\d,]', '', price_text).replace(',', '.')
                     price_float = float(price_clean)
         
-        elif 'amazon.com.br' in product.url or 'web:8000' in product.url: 
+        elif 'amazon.com.br' in product.url:
             price_whole_element = soup.find('span', class_='a-price-whole')
             price_fraction_element = soup.find('span', class_='a-price-fraction')
             if price_whole_element and price_fraction_element:
@@ -52,7 +53,13 @@ def update_product_price(product_id):
                 print(f"SUCESSO! Preço atualizado para R$ {price_float:.2f} para o produto ID {product.id}")
 
                 if product.current_price <= product.target_price:
-                    print(f"ALERTA! Produto '{product.name}' (ID: {product.id}) atingiu o preço alvo!")
+                    print(f"ALERTA! Produto '{product.name}' (ID: {product.id}) atingiu o preço alvo! Enviando e-mail...")
+                    
+                    subject = f'Alerta de Preço: {product.name} está barato!'
+                    message = f'Ótima notícia! O produto "{product.name}" atingiu o preço que você queria.\n\nPreço Alvo: R$ {product.target_price}\nPreço Atual: R$ {product.current_price}\n\nCompre agora no link: {product.url}'
+                    recipient_list = ['rebecamssilva@gmail.com']
+
+                    send_mail(subject, message, None, recipient_list)
 
             else:
                 print(f"INFO: Preço do produto ID {product.id} permaneceu o mesmo.")
@@ -68,10 +75,6 @@ def update_product_price(product_id):
 
 @shared_task
 def scrape_all_products():
-    """
-    Tarefa principal que encontra todos os produtos e dispara
-    uma tarefa de scraping para cada um.
-    """
     print("--- Iniciando a tarefa de scraping de TODOS os produtos ---")
     products = Product.objects.all()
     for product in products:
