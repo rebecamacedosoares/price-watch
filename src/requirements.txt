@@ -8,3 +8,5 @@ requests
 beautifulsoup4
 django-cors-headers
 django-sendgrid-v5
+djoser
+djangorestframework-simplejwt
