@@ -169,3 +169,25 @@ h2 {
   width: 100%;
   max-width: 450px;
 }
+
+.welcome-user {
+  margin-right: 15px;
+  opacity: 0.8;
+}
+
+.logout-btn {
+  background-color: transparent;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: var(--primary-color);
+  color: var(--text-color-dark);
+}
