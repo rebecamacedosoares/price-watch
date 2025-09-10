@@ -87,7 +87,7 @@ CELERY_TIMEZONE = 'America/Sao_Paulo'
 CELERY_BEAT_SCHEDULE = {
     'scrape-all-products-every-minute': {
         'task': 'products.tasks.scrape_all_products',
-        'schedule': 60.0,
+        'schedule':  14400.0,
     },
 }
 

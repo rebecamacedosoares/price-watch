@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import AuthContext from '../context/AuthContext';
 
 const DashboardPage = () => {
   const [products, setProducts] = useState([]);
@@ -9,11 +10,19 @@ const DashboardPage = () => {
   const [newProductName, setNewProductName] = useState('');
   const [newProductUrl, setNewProductUrl] = useState('');
   const [newProductTargetPrice, setNewProductTargetPrice] = useState('');
+  
+  const { authTokens } = useContext(AuthContext);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/products/');
+      const response = await fetch('http://localhost:8000/api/products/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `JWT ${authTokens.access}`
+        }
+      });
       if (!response.ok) throw new Error("A resposta da rede não foi boa");
       const data = await response.json();
       setProducts(data);
@@ -25,8 +34,12 @@ const DashboardPage = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (authTokens) {
+        fetchProducts();
+    } else {
+        setLoading(false);
+    }
+  }, [authTokens]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -37,7 +50,10 @@ const DashboardPage = () => {
     try {
       const response = await fetch('http://localhost:8000/api/products/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `JWT ${authTokens.access}`
+        },
         body: JSON.stringify(newProduct),
       });
 
@@ -46,7 +62,6 @@ const DashboardPage = () => {
         const errorMessage = errorData.url?.[0] || 'Falha ao criar o produto. Verifique os dados.';
         throw new Error(errorMessage);
       }
-      
       setNewProductName('');
       setNewProductUrl('');
       setNewProductTargetPrice('');
@@ -62,7 +77,12 @@ const DashboardPage = () => {
   const handleDelete = async (productId) => {
     if (!window.confirm("Tem certeza que deseja remover este produto?")) return;
     try {
-      const response = await fetch(`http://localhost:8000/api/products/${productId}/`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:8000/api/products/${productId}/`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `JWT ${authTokens.access}`
+        }
+      });
       if (response.status !== 204) throw new Error('Falha ao deletar o produto');
       fetchProducts();
     } catch (error) {
@@ -118,7 +138,7 @@ const DashboardPage = () => {
                       </div>
                   );
               })
-            ) : <p>Nenhum produto cadastrado ainda.</p>}
+            ) : <p>Nenhum produto cadastrado para este usuário.</p>}
           </div>
         )}
       </section>
