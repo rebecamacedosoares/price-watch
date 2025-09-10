@@ -18,7 +18,7 @@ function App() {
           <div className="nav-links">
             {user ? (
               <>
-                <span className="welcome-user">Olá, {user.username || 'Usuário'}!</span> {/* <-- MUDANÇA AQUI */}
+                <span className="welcome-user">Olá, {user.username || 'Usuário'}!</span>
                 <button onClick={logoutUser} className="logout-btn">Sair</button>
               </>
             ) : (
