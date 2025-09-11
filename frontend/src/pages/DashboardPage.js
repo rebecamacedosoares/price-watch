@@ -11,7 +11,7 @@ const DashboardPage = () => {
   const [newProductUrl, setNewProductUrl] = useState('');
   const [newProductTargetPrice, setNewProductTargetPrice] = useState('');
   
-  const { authTokens } = useContext(AuthContext);
+  const { authTokens, logoutUser } = useContext(AuthContext);
 
   const fetchProducts = async () => {
     try {
@@ -23,11 +23,18 @@ const DashboardPage = () => {
           'Authorization': `JWT ${authTokens.access}`
         }
       });
+
+      if (response.status === 401) {
+        logoutUser();
+        return;
+      }
+
       if (!response.ok) throw new Error("A resposta da rede não foi boa");
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -59,13 +66,20 @@ const DashboardPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.url?.[0] || 'Falha ao criar o produto. Verifique os dados.';
+        let errorMessage = 'Falha ao criar o produto. Verifique os dados.';
+        
+        if (errorData.non_field_errors) {
+          errorMessage = "Você já está a monitorizar um produto com esta URL.";
+        } else if (errorData.url) {
+          errorMessage = `URL: ${errorData.url[0]}`;
+        }
+        
         throw new Error(errorMessage);
       }
       setNewProductName('');
       setNewProductUrl('');
       setNewProductTargetPrice('');
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
       setFormError(error.message);
@@ -84,7 +98,7 @@ const DashboardPage = () => {
         }
       });
       if (response.status !== 204) throw new Error('Falha ao deletar o produto');
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error("Erro ao deletar produto:", error);
       alert("Erro ao deletar produto.");
@@ -122,7 +136,7 @@ const DashboardPage = () => {
         <h2>Meus Produtos Monitorados</h2>
         {loading ? <p>Carregando produtos...</p> : (
           <div className="product-list">
-            {products.length > 0 ? (
+            {authTokens && products.length > 0 ? (
               products.map(product => {
                   const isPriceGood = product.current_price && parseFloat(product.current_price) <= parseFloat(product.target_price);
                   return (
@@ -138,7 +152,7 @@ const DashboardPage = () => {
                       </div>
                   );
               })
-            ) : <p>Nenhum produto cadastrado para este usuário.</p>}
+            ) : <p>Faça login para ver seus produtos ou cadastre um novo item acima.</p>}
           </div>
         )}
       </section>
