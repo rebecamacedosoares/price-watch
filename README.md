@@ -17,7 +17,7 @@ Este projeto foi construído para demonstrar e aprofundar conhecimentos em uma a
 | Categoria                  | Tecnologia / Ferramenta                                |
 | -------------------------- | ------------------------------------------------------ |
 | **Backend** | Python, Django, Django Rest Framework (DRF)            |
-| **Frontend** | React, React Router                                    |
+| **Frontend** | React, React Router, Recharts                                     |
 | **Banco de Dados** | PostgreSQL                                             |
 | **Tarefas Assíncronas** | Celery, Celery Beat                                    |
 | **Fila de Mensagens** | Redis                                                  |
