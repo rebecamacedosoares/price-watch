@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
 const DashboardPage = () => {
@@ -12,8 +13,13 @@ const DashboardPage = () => {
   const [newProductTargetPrice, setNewProductTargetPrice] = useState('');
   
   const { authTokens, logoutUser } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    if (!authTokens) {
+        setLoading(false);
+        return;
+    }
     try {
       setLoading(true);
       const response = await fetch('http://localhost:8000/api/products/', {
@@ -23,12 +29,10 @@ const DashboardPage = () => {
           'Authorization': `JWT ${authTokens.access}`
         }
       });
-
       if (response.status === 401) {
         logoutUser();
         return;
       }
-
       if (!response.ok) throw new Error("A resposta da rede não foi boa");
       const data = await response.json();
       setProducts(data);
@@ -38,22 +42,17 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authTokens, logoutUser]);
 
   useEffect(() => {
-    if (authTokens) {
-        fetchProducts();
-    } else {
-        setLoading(false);
-    }
-  }, [authTokens]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSubmitting(true);
     setFormError('');
     const newProduct = { name: newProductName, url: newProductUrl, target_price: newProductTargetPrice };
-
     try {
       const response = await fetch('http://localhost:8000/api/products/', {
         method: 'POST',
@@ -63,17 +62,14 @@ const DashboardPage = () => {
         },
         body: JSON.stringify(newProduct),
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         let errorMessage = 'Falha ao criar o produto. Verifique os dados.';
-        
         if (errorData.non_field_errors) {
-          errorMessage = "Você já está a monitorizar um produto com esta URL.";
+          errorMessage = "Você já está monitorando um produto com esta URL.";
         } else if (errorData.url) {
           errorMessage = `URL: ${errorData.url[0]}`;
         }
-        
         throw new Error(errorMessage);
       }
       setNewProductName('');
@@ -88,7 +84,8 @@ const DashboardPage = () => {
     }
   };
   
-  const handleDelete = async (productId) => {
+  const handleDelete = async (productId, event) => {
+    event.stopPropagation();
     if (!window.confirm("Tem certeza que deseja remover este produto?")) return;
     try {
       const response = await fetch(`http://localhost:8000/api/products/${productId}/`, { 
@@ -105,6 +102,10 @@ const DashboardPage = () => {
     }
   };
   
+  const handleCardClick = (productId) => {
+    navigate(`/products/${productId}`);
+  };
+
   const formatDate = (dateString) => {
       if (!dateString) return 'Nunca';
       const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -118,16 +119,11 @@ const DashboardPage = () => {
         <form onSubmit={handleSubmit}>
           <label htmlFor="product-name">Nome do Produto</label>
           <input id="product-name" type="text" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} placeholder="Ex: Livro O Hobbit" required />
-          
           <label htmlFor="product-url">URL do Produto</label>
           <input id="product-url" type="url" value={newProductUrl} onChange={(e) => setNewProductUrl(e.target.value)} placeholder="https://..." required />
-
           <label htmlFor="product-price">Preço Alvo (R$)</label>
           <input id="product-price" type="number" step="0.01" value={newProductTargetPrice} onChange={(e) => setNewProductTargetPrice(e.target.value)} placeholder="Ex: 35.50" required />
-          
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Adicionando...' : 'Adicionar Produto'}
-          </button>
+          <button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Adicionando...' : 'Adicionar Produto'}</button>
           {formError && <p className="form-error">{formError}</p>} 
         </form>
       </section>
@@ -140,15 +136,15 @@ const DashboardPage = () => {
               products.map(product => {
                   const isPriceGood = product.current_price && parseFloat(product.current_price) <= parseFloat(product.target_price);
                   return (
-                      <div key={product.id} className={`product-card ${isPriceGood ? 'is-on-sale' : ''}`}>
-                          <button className="delete-btn" title="Remover produto" onClick={() => handleDelete(product.id)}>×</button>
+                      <div key={product.id} className={`product-card ${isPriceGood ? 'is-on-sale' : ''}`} onClick={() => handleCardClick(product.id)}>
+                          <button className="delete-btn" title="Remover produto" onClick={(e) => handleDelete(product.id, e)}>×</button>
                           <h3>{product.name}</h3>
                           <p><strong>Preço Alvo:</strong> R$ {product.target_price}</p>
                           <p className={product.current_price ? 'price-ok' : 'price-pending'}>
                               <strong>Preço Atual:</strong> {product.current_price ? `R$ ${product.current_price}` : 'Aguardando verificação...'}
                           </p>
                           <p className="last-checked">Última verificação: {formatDate(product.last_checked)}</p>
-                          <a href={product.url} target="_blank" rel="noopener noreferrer">Ver Produto</a>
+                          <a href={product.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Ver Produto na Loja</a>
                       </div>
                   );
               })

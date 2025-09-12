@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
   const navigate = useNavigate();
 
-  const loginUser = async (username, password) => {
+  const loginUser = useCallback(async (username, password) => {
     try {
       const response = await fetch('http://localhost:8000/auth/jwt/create/', {
         method: 'POST',
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         setAuthTokens(data);
-        setUser(jwtDecode(data.access)); // Decodifica e define o user aqui
+        setUser(jwtDecode(data.access));
         localStorage.setItem('authTokens', JSON.stringify(data));
         navigate('/');
         return true;
@@ -52,14 +52,14 @@ export const AuthProvider = ({ children }) => {
       console.error('Erro de login:', error);
       throw error;
     }
-  };
+  }, [navigate]);
 
-  const logoutUser = () => {
+  const logoutUser = useCallback(() => {
     setAuthTokens(null);
     setUser(null);
     localStorage.removeItem('authTokens');
     navigate('/login');
-  };
+  }, [navigate]);
 
   useEffect(() => {
     if (authTokens) {
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
     setLoading(false);
-  }, [authTokens]);
+  }, [authTokens, logoutUser]);
 
   const contextData = {
     user: user,
