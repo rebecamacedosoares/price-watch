@@ -1,4 +1,4 @@
-# 🚀 PriceWatch
+# PriceWatch
 
 PriceWatch é uma aplicação web full-stack projetada para automatizar o monitoramento de preços de produtos em e-commerces. Os usuários podem se cadastrar, adicionar produtos de interesse através de uma URL, definir um preço alvo e serem notificados por e-mail quando o valor do produto atingir o ideal para compra.
 
@@ -27,7 +27,7 @@ Este projeto foi construído para demonstrar e aprofundar conhecimentos em uma a
 | **Ambiente e Orquestração**| Docker                                 |
 | **Controle de Versão** | Git, GitHub                                            |
 
-## ⚙️ Como Executar Localmente
+## 🚀 Como Executar Localmente
 
 ### Pré-requisitos
 - [Docker](https://www.docker.com/products/docker-desktop/)
